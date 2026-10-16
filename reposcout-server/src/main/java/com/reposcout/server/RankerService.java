@@ -59,6 +59,7 @@ public class RankerService {
     }
 
     public List<Opportunity> rank (List<RawSignal> signals, String repoUrl) throws Exception {
+        if (signals.isEmpty()) return List.of(); //dont need to do anything if this doesnt work
         String prompt = buildPrompt(signals);
         String response = geminiClient.generate(prompt);
         return parseAndMap(response, signals, repoUrl);

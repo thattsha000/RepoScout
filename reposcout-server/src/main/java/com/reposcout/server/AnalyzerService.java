@@ -10,8 +10,10 @@ import org.springframework.stereotype.Service;
 @Service 
 public class AnalyzerService {
     private final Harvester harvester;
-    public AnalyzerService(Harvester harvester) {
+    private final RankerService rankerService;
+    public AnalyzerService(Harvester harvester, RankerService rankerService) {
         this.harvester = harvester;
+        this.rankerService = rankerService;
     }
     public List<Opportunity> findOpportunities(String repoUrl) throws Exception {
         File tempDir = Files.createTempDirectory("reposcout-").toFile();
@@ -27,10 +29,11 @@ public class AnalyzerService {
             List<RawSignal> signals = harvester.harvest(tempDir);
             System.out.println("Found " + signals.size() + " signals");
             signals.forEach(s -> System.out.println(s.getFile() + ":" + s.getLine() + " → " + s.getText()));
-             return List.of();
+             return rankerService.rank(signals, repoUrl);
         }  
          catch (Exception e) {
-        throw new IllegalArgumentException("Could not clone repo. Make sure you're passing a valid GitHub URL: " + repoUrl);
+            e.printStackTrace();
+            throw new IllegalArgumentException("Could not analyze repo: " + repoUrl, e);
          }
         finally {
             // delete the temp folder when done
@@ -46,5 +49,4 @@ public class AnalyzerService {
         }
         dir.delete();
         }
-
 }

@@ -12,8 +12,6 @@ public class AnalyzeController {
 
 
     private final AnalyzerService analyzerService;
-
-
         public AnalyzeController(AnalyzerService analyzerService) {
             this.analyzerService = analyzerService;
         }

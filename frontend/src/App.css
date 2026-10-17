@@ -1,184 +1,866 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
+/* =========================================================
+   RepoScout: deep space, violet + cyan light, glass panels,
+   and the repo itself as a glowing 3D board.
+   ========================================================= */
 
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+:root {
+  --bg: #04051a;
+  --text: #eef0ff;
+  --text-muted: #a4a9cc;
+  --text-faint: #6f75a0;
+  --violet: #8b5cf6;
+  --violet-bright: #c4b5fd;
+  --cyan: #38bdf8;
+  --cyan-bright: #a5f3fc;
+  --glass: rgb(255 255 255 / 0.045);
+  --glass-border: rgb(255 255 255 / 0.1);
+  --danger: #fda4af;
+
+  --font-display: 'Unbounded Variable', 'Archivo Variable', system-ui, sans-serif;
+  --font-ui: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-code: 'Martian Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Motion (Emil Kowalski): strong ease-out for UI */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  color-scheme: dark;
 }
 
+/* The board's angles are registered properties, so they can be animated
+   and every pin can counter-rotate with them to keep facing the viewer. */
+@property --rx { syntax: '<angle>'; inherits: true; initial-value: 58deg; }
+@property --rz { syntax: '<angle>'; inherits: true; initial-value: -24deg; }
+@property --lift { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
+/* ---------- Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  caret-color: var(--cyan);
+}
+
+::selection { background: rgb(139 92 246 / 0.45); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+code { font-family: var(--font-code); font-stretch: 87.5%; }
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #1e2252; border-radius: 10px; border: 2px solid var(--bg); }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 24px 60px -30px rgb(0 0 0 / 0.8);
+}
+
+/* ---------- Hero ---------- */
 .hero {
   position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
+  min-height: 100vh;
+  overflow: clip;
+  isolation: isolate;
+  background:
+    radial-gradient(90% 45% at 50% 85%, rgb(13 26 92 / 0.8) 0%, transparent 70%),
+    linear-gradient(to bottom, #050620, var(--bg));
+}
+/* fade the bottom edge into the page so there's no seam */
+.hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 160px;
+  background: linear-gradient(to bottom, transparent, var(--bg));
+  pointer-events: none;
 }
 
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+/* Soft light sources behind everything */
+.glow {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+.glow-violet {
+  width: 720px;
+  height: 620px;
+  right: -60px;
+  top: 40px;
+  background: radial-gradient(closest-side, rgb(139 92 246 / 0.55), rgb(91 33 182 / 0.25) 55%, transparent);
+}
+.glow-blue {
+  width: 620px;
+  height: 520px;
+  left: -220px;
+  top: 260px;
+  background: radial-gradient(closest-side, rgb(37 99 235 / 0.35), transparent);
 }
 
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
-  position: relative;
+.wave {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
+  height: 300px;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+}
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
+.topbar {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 1.75rem 2rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+.wordmark svg { color: var(--cyan); filter: drop-shadow(0 0 8px rgb(56 189 248 / 0.7)); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+}
+
+.hero-inner {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 4rem 2rem 1rem;
+}
+
+.intro-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4rem;
+  align-items: start;
+  margin-top: 2rem;
+}
+.intro-row .lede { margin: 0; }
+.search-col { justify-self: end; width: 100%; max-width: 34rem; }
+
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  /* scales with the window so the single line always fits */
+  font-size: min(5.25rem, 6.3vw);
+  line-height: 1;
+  font-weight: 350;
+  letter-spacing: -0.055em;
+  white-space: nowrap;
+  color: #ffffff;
+  text-shadow: 0 0 60px rgb(139 92 246 / 0.45);
+}
+
+.lede {
+  margin: 0 0 2.5rem;
+  max-width: 33rem;
+  color: var(--text-muted);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+/* ---------- Search ---------- */
+.search {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 34rem;
+  padding: 0.4rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: rgb(10 12 44 / 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.search:focus-within {
+  border-color: rgb(139 92 246 / 0.7);
+  box-shadow: 0 0 0 4px rgb(139 92 246 / 0.18), 0 0 40px -6px rgb(139 92 246 / 0.6);
+}
+
+.field { flex: 1; display: flex; align-items: center; min-width: 0; }
+
+.prefix {
+  padding-left: 1rem;
+  font-family: var(--font-code);
+  font-stretch: 87.5%;
+  font-size: 0.875rem;
+  color: var(--text-faint);
+  user-select: none;
+}
+
+.field input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.75rem 0.5rem 0.75rem 0.1rem;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-code);
+  font-stretch: 87.5%;
+  font-size: 0.875rem;
+}
+.field input:focus { outline: none; }
+.field input::placeholder { color: var(--text-faint); }
+
+.primary {
+  padding: 0 1.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #090b26;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 0 24px -4px rgb(196 181 253 / 0.7);
+  transition: transform 160ms var(--ease-out), box-shadow 200ms ease, opacity 160ms ease;
+}
+.primary:active:not(:disabled) { transform: scale(0.97); }
+.primary:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover:not(:disabled) { box-shadow: 0 0 34px 0 rgb(196 181 253 / 0.9); }
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1.1rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-faint);
+}
+.examples > span { margin: 0 0.25rem 0 0.5rem; }
+
+.example {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--text-muted);
+  font-family: var(--font-code);
+  font-stretch: 87.5%;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+.example:disabled { opacity: 0.45; cursor: default; }
+@media (hover: hover) and (pointer: fine) {
+  .example:hover:not(:disabled) {
+    color: var(--text);
+    border-color: rgb(56 189 248 / 0.6);
+    background: rgb(56 189 248 / 0.1);
   }
 }
+
+.hero-error {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  max-width: 34rem;
+  margin-top: 1.25rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgb(253 164 175 / 0.3);
+  border-radius: 14px;
+  background: rgb(253 164 175 / 0.08);
+  color: var(--danger);
+}
+.hero-error svg { flex-shrink: 0; margin-top: 0.05rem; }
+.hero-error p { margin: 0; color: var(--text); }
+
+/* ---------- The 3D repo map ---------- */
+.map-section {
+  position: relative;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 2rem 2rem 13rem;
+}
+
+.timer { font-variant-numeric: tabular-nums; color: var(--cyan-bright); }
+
+.scene { position: relative; min-width: 0; }
+
+.stage3d {
+  /* absolute so its fixed design size never widens the layout; it's scaled to fit */
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  display: grid;
+  place-items: center;
+  perspective: 1500px;
+  perspective-origin: 50% 30%;
+}
+
+.board {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: translateZ(var(--lift)) rotateX(var(--rx)) rotateZ(var(--rz));
+  /* a slow turn, back and forth; ease-in-out for on-screen movement (Emil) */
+  animation: spin 11s cubic-bezier(0.77, 0, 0.175, 1) infinite alternate;
+}
+@keyframes spin {
+  from { --rz: -33deg; --rx: 57deg; --lift: 0px; }
+  to { --rz: -15deg; --rx: 60deg; --lift: 12px; }
+}
+
+.fx { position: absolute; inset: 0; transform-style: preserve-3d; }
+
+/* soft light pooled under the board, so it reads as floating */
+.board-glow {
+  position: absolute;
+  inset: -12% -8%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(139 92 246 / 0.45), rgb(56 189 248 / 0.12) 60%, transparent);
+  filter: blur(30px);
+  transform: translateZ(-70px);
+  pointer-events: none;
+}
+
+/* specks of light hovering at different heights above the board */
+.dust {
+  position: absolute;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: var(--cyan-bright);
+  box-shadow: 0 0 6px 1px rgb(165 243 252 / 0.9);
+  transform: translateZ(var(--z));
+  animation: twinkle 6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.9; }
+}
+
+.floor { position: absolute; left: -8px; top: -8px; overflow: visible; }
+.floor-plate {
+  fill: rgb(16 17 64 / 0.88);
+  stroke: rgb(196 181 253 / 0.7);
+  stroke-width: 1.4;
+  filter: drop-shadow(0 0 18px rgb(139 92 246 / 0.55)) drop-shadow(0 40px 40px rgb(0 0 0 / 0.6));
+}
+.floor-line { fill: rgb(196 181 253 / 0.2); transition: fill 300ms ease; }
+.board-error .floor-line { fill: rgb(196 181 253 / 0.08); }
+
+.slab { position: absolute; display: block; }
+.slab-front {
+  left: -8px;
+  top: calc(100% + 8px);
+  width: calc(100% + 16px);
+  height: 24px;
+  transform-origin: top;
+  transform: rotateX(-90deg);
+  background: linear-gradient(to bottom, rgb(124 92 246 / 0.55), rgb(30 20 90 / 0.85) 40%, rgb(8 8 34 / 0.95));
+  border-top: 1.5px solid rgb(216 204 255 / 0.85);
+  box-shadow: 0 0 24px rgb(139 92 246 / 0.5);
+}
+.slab-right {
+  left: calc(100% + 8px);
+  top: -8px;
+  width: 24px;
+  height: calc(100% + 16px);
+  transform-origin: left;
+  transform: rotateY(90deg);
+  background: linear-gradient(to right, rgb(96 72 220 / 0.5), rgb(22 16 72 / 0.85) 40%, rgb(6 6 28 / 0.95));
+  border-left: 1.5px solid rgb(216 204 255 / 0.85);
+}
+
+/* Towers: an extruded box built from five faces, lit violet → cyan */
+.tower {
+  position: absolute;
+  height: 9px;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50% 0;
+  transition: transform 400ms var(--ease-out);
+}
+/* Note: never set opacity or filter on .tower itself; either one flattens its 3D faces.
+   Dimming is done on the faces instead. */
+.face { position: absolute; display: block; transition: opacity 300ms ease; }
+.face.top {
+  inset: 0;
+  transform: translateZ(var(--h));
+  background: linear-gradient(135deg, #ffffff, var(--cyan-bright) 70%);
+  box-shadow: 0 0 18px 5px rgb(56 189 248 / 0.7);
+}
+.face.front,
+.face.back {
+  left: 0;
+  width: 100%;
+  height: var(--h);
+  transform-origin: top;
+  transform: rotateX(90deg);
+}
+.face.front { top: 100%; background: linear-gradient(to top, rgb(165 243 252 / 0.95), rgb(124 58 237 / 0.85)); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25); }
+.face.back { top: 0; background: rgb(76 29 149 / 0.85); }
+.face.left,
+.face.right {
+  top: 0;
+  height: 100%;
+  width: var(--h);
+  transform-origin: left;
+  transform: rotateY(-90deg);
+}
+.face.left { left: 0; background: linear-gradient(to left, rgb(125 211 252 / 0.9), rgb(91 33 182 / 0.8)); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); }
+.face.right { left: 100%; background: linear-gradient(to left, rgb(56 189 248 / 0.85), rgb(76 29 149 / 0.8)); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18); }
+
+.board-idle .tower { transform: scaleZ(0.85); }
+
+/* Scanning: each tower rises as the beam reaches it (delay set per tower) */
+.board-scanning .tower { animation: rise3d 520ms var(--ease-out) backwards; }
+@keyframes rise3d {
+  from { transform: scaleZ(0.02); }
+}
+
+/* Done: the three results stand tall, everything else steps down */
+.board-done .tower:not(.tower-pinned) { transform: scaleZ(0.3); }
+.board-done .tower:not(.tower-pinned) .face { opacity: 0.45; }
+.board-done .tower-pinned { animation: rise3d 650ms var(--ease-out) backwards; }
+.board-done .tower-pinned .face.top { box-shadow: 0 0 22px 7px rgb(56 189 248 / 0.8); }
+.board-empty .tower { transform: scaleZ(0.12); }
+.board-empty .tower .face { opacity: 0.4; }
+.board-error .tower { visibility: hidden; }
+
+/* The number pin floats above a result tower, turned to face the viewer. It's a button.
+   Everything it draws (disc, rim, glow) stays inside its own box: on 3D-transformed
+   layers Chrome crops anything painted outside the box (shadows, filters, halos) to a square. */
+.tag {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 68px;
+  height: 68px;
+  margin: -34px 0 0 -34px;
+  padding: 0;
+  border: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle closest-side,
+    rgb(22 20 76) 0 52%,
+    rgb(216 204 255 / 0.75) 52% 55.5%,
+    rgb(139 92 246 / 0.5) 56%,
+    rgb(139 92 246 / 0) 100%);
+  color: #fff;
+  font-family: var(--font-code);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transform: translateZ(calc(var(--h) + 30px)) rotateZ(calc(var(--rz) * -1)) rotateX(calc(var(--rx) * -1));
+  transition: color 180ms ease;
+}
+.tag:focus-visible { outline: 2px solid var(--cyan-bright); outline-offset: -6px; border-radius: 50%; }
+.tag-active {
+  color: #090b26;
+  background: radial-gradient(circle closest-side,
+    #ffffff 0 52%,
+    rgb(165 243 252 / 0.95) 52% 56%,
+    rgb(56 189 248 / 0.65) 56.5%,
+    rgb(56 189 248 / 0) 100%);
+}
+/* a slow ring around the open pin so it reads as selected */
+.tag-active::after {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgb(165 243 252 / 0.7);
+  animation: ping 1.8s var(--ease-out) infinite;
+}
+@keyframes ping {
+  from { transform: scale(0.9); opacity: 1; }
+  to { transform: scale(1.35); opacity: 0; }
+}
+
+/* The open pin's tower glows; the other two step back a little */
+.has-active .tower-pinned:not(.tower-active) .face { opacity: 0.55; }
+.tower-active .face.top { box-shadow: 0 0 28px 10px rgb(56 189 248 / 0.95); }
+
+/* The detail card for the open pin sits under the board, lined up beneath its pin */
+.map-wrap { position: relative; }
+
+.pin-beam {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+.pin-beam line {
+  stroke: var(--cyan-bright);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+  filter: drop-shadow(0 0 4px rgb(56 189 248 / 0.9));
+  animation: beam-flow 900ms linear infinite;
+}
+.pin-beam circle { fill: var(--cyan-bright); filter: drop-shadow(0 0 6px rgb(56 189 248 / 0.9)); }
+@keyframes beam-flow { to { stroke-dashoffset: -16; } }
+
+.pin-card {
+  position: relative;
+  z-index: 2;
+  width: 40rem;
+  margin-top: 1.1rem;
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: 1.5rem 1.75rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 20px;
+  background: rgb(14 14 52 / 0.7);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 30px 70px -20px rgb(0 0 0 / 0.85), 0 0 60px -14px rgb(56 189 248 / 0.55);
+  transition: margin-left 320ms var(--ease-out);
+  animation: card-in 260ms var(--ease-out) both;
+}
+@keyframes card-in {
+  from { opacity: 0; filter: blur(6px); transform: translateY(6px); }
+}
+.pin-card-marker { display: flex; flex-direction: column; gap: 0.3rem; }
+.pin-card-body { min-width: 0; }
+
+.pin-card-rank { font-family: var(--font-code); font-stretch: 87.5%; font-size: 0.75rem; color: var(--text-faint); }
+.pin-card-line {
+  font-family: var(--font-code);
+  font-size: 2rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: #fff;
+  text-shadow: 0 0 18px rgb(56 189 248 / 0.8);
+}
+.pin-card h3 {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+.pin-card p {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.pin-card-path {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.6875rem;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
+/* The scan beam: a sheet of light standing on the board, sweeping across.
+   Constant speed, so linear (Emil). */
+.wall {
+  position: absolute;
+  left: 0;
+  top: -16px;
+  width: 140px;
+  height: calc(100% + 32px);
+  transform-origin: left;
+  background: linear-gradient(to right, rgb(56 189 248 / 0.55), rgb(139 92 246 / 0.18) 55%, transparent);
+  border-left: 2px solid var(--cyan-bright);
+  box-shadow: -6px 0 24px rgb(56 189 248 / 0.6);
+  animation: sweep3d linear infinite;
+  pointer-events: none;
+}
+@keyframes sweep3d {
+  from { transform: translateX(-24px) rotateY(-90deg); }
+  to { transform: translateX(var(--sweep-to)) rotateY(-90deg); }
+}
+
+.map-caption {
+  max-width: 40rem;
+  margin: 0.5rem auto 0;
+  min-height: 3.5rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+.map-caption p { margin: 0; }
+.map-caption { position: relative; }
+.stages-timer {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  font-family: var(--font-code);
+  font-stretch: 87.5%;
+  font-size: 0.8125rem;
+}
+
+.stages { list-style: none; margin: 0; padding: 0; }
+.stage {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.22rem 0;
+  transition: color 200ms ease, opacity 200ms ease;
+}
+.stage-pending { opacity: 0.5; }
+.stage-active { color: var(--text); font-weight: 600; }
+
+.stage-mark {
+  position: relative;
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1.5px solid rgb(255 255 255 / 0.25);
+  transition: background-color 200ms var(--ease-out), border-color 200ms var(--ease-out), box-shadow 200ms ease;
+}
+.stage-done .stage-mark {
+  border-color: var(--cyan);
+  background: var(--cyan);
+  color: #04051a;
+  box-shadow: 0 0 12px rgb(56 189 248 / 0.7);
+}
+.stage-active .stage-mark { border-color: rgb(56 189 248 / 0.25); }
+.stage-active .stage-mark::after {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  border-top-color: var(--cyan-bright);
+  animation: turn 800ms linear infinite;
+}
+@keyframes turn { to { transform: rotate(360deg); } }
+
+/* ---------- Results ---------- */
+.below {
+  position: relative;
+  max-width: 76rem;
+  margin: -8rem auto 0;
+  padding: 0 2rem 7rem;
+}
+
+.results-section {
+  scroll-margin-top: 2rem;
+  padding: 1.75rem 0 0.5rem;
+}
+
+.summary {
+  margin: 0;
+  padding: 0 2.5rem 0.25rem;
+  color: var(--text-muted);
+}
+.summary code { color: var(--text); font-size: 0.875em; }
+
+.results {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 2.5rem;
+}
+
+.result {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 2.5rem;
+  padding: 2.25rem 0;
+  border-top: 1px solid var(--glass-border);
+  animation: rise 320ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i) * 70ms);
+}
+.result:first-child { border-top: 0; }
+.result {
+  margin: 0 -1.25rem;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  border-radius: 14px;
+  transition: background-color 200ms ease;
+}
+.result-active { background: rgb(139 92 246 / 0.09); }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+}
+
+.marker { display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+
+.rank {
+  font-family: var(--font-code);
+  font-stretch: 87.5%;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+/* The line number glows like the tower that found it */
+.line-no {
+  position: relative;
+  font-family: var(--font-code);
+  font-size: 2.25rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 22px rgb(56 189 248 / 0.75), 0 0 2px rgb(165 243 252 / 0.9);
+}
+.line-l { font-weight: 400; color: var(--violet-bright); text-shadow: 0 0 16px rgb(139 92 246 / 0.8); margin-right: 0.05em; }
+.line-no::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.2em;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--violet), var(--cyan));
+  box-shadow: 0 0 12px rgb(56 189 248 / 0.8);
+  transform-origin: left center;
+  animation: mark 340ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i) * 70ms + 160ms);
+}
+@keyframes mark { from { transform: scaleX(0); } }
+
+.path {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
+.body h2 {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.body p {
+  margin: 0 0 1.1rem;
+  max-width: 62ch;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgb(56 189 248 / 0.35);
+  border-radius: 999px;
+  background: rgb(56 189 248 / 0.08);
+  color: var(--cyan-bright);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 200ms ease;
+}
+.open .arrow { transition: transform 160ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) {
+  .open:hover {
+    background: rgb(56 189 248 / 0.16);
+    border-color: rgb(56 189 248 / 0.7);
+    box-shadow: 0 0 20px -4px rgb(56 189 248 / 0.7);
+  }
+  .open:hover .arrow { transform: translate(2px, -2px); }
+}
+
+/* Empty state */
+.empty {
+  max-width: 46rem;
+  padding: 2rem 2.25rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.empty h2 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.empty h2 code { font-size: 0.8em; color: var(--cyan-bright); }
+.empty p { margin: 0 0 0.75rem; color: var(--text-muted); }
+.examples-light > span { margin-left: 0; }
+
+/* ---------- Reduced motion: fewer, gentler ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .wall { display: none; }
+  .board-scanning .tower, .board-done .tower-pinned { animation: none; }
+  .tower { transition: none; }
+  .tag-active::after { animation: none; }
+  .board { animation: none; }
+  .dust { animation: none; opacity: 0.5; }
+  .pin-beam line { animation: none; }
+  .pin-card { transition: none; }
+  .stage-active .stage-mark::after { animation-duration: 2.4s; }
+  .result { animation: fade 200ms ease backwards; animation-delay: 0ms; }
+  .line-no::after { animation: none; }
+  .primary:active:not(:disabled) { transform: none; }
+  .open .arrow { transition: none; }
+}
+@keyframes fade { from { opacity: 0; } }

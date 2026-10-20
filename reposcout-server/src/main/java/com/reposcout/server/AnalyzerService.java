@@ -24,7 +24,9 @@ public class AnalyzerService {
     }
     public List<Opportunity> findOpportunities(String repoUrl) throws Exception {
         // new: check the cache before doing any work
-        String key = repoUrl + "@" + latestCommit(repoUrl);
+        String sha = latestCommit(repoUrl);
+        String key = repoUrl + "@" + sha;
+
         List<Opportunity> cached = cache.get(key);
         if (cached != null) {
             return cached;
@@ -46,7 +48,7 @@ public class AnalyzerService {
             List<RawSignal> signals = harvester.harvest(tempDir);
             List<Opportunity> result;
             try {
-                result = rankerService.rank(signals, repoUrl);
+                result = rankerService.rank(signals, repoUrl, sha);
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new ResponseStatusException(

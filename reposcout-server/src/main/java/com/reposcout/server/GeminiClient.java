@@ -26,7 +26,7 @@ public String generate(String prompt) throws Exception {
 ObjectMapper mapper = new ObjectMapper();
 ObjectNode body = mapper.createObjectNode();
 body.putArray("contents").addObject().putArray("parts").addObject().put("text", prompt);
-body.putObject("generationConfig").put("responseMimeType", "application/json");
+body.putObject("generationConfig").put("responseMimeType", "application/json").put("temperature", 0);
 String json = mapper.writeValueAsString(body);
 HttpClient client = HttpClient.newHttpClient();
 HttpResponse<String> response = null;

@@ -13,6 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 @Service 
 public class RankerService {
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final int MAX_SIGNALS = 60;
     private final GeminiClient geminiClient;
         private static final String INSTRUCTIONS = """
         You are helping a newcomer find good first contributions to an
@@ -71,6 +72,9 @@ public class RankerService {
 
     public List<Opportunity> rank (List<RawSignal> signals, String repoUrl, String sha) throws Exception {
         if (signals.isEmpty()) return List.of(); //dont need to do anything if this doesnt work
+        if (signals.size() > MAX_SIGNALS) {
+        signals = signals.subList(0, MAX_SIGNALS); 
+        }  // only the first 60 go to Gemini
         String prompt = buildPrompt(signals);
         String response = geminiClient.generate(prompt);
         return parseAndMap(response, signals, repoUrl, sha);

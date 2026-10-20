@@ -1,0 +1,52 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.reposcout:reposcout-server >-------------------
+[INFO] Building reposcout-server 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.1.1:run (default-cli) > test-compile @ reposcout-server >>>
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ reposcout-server ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ reposcout-server ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ reposcout-server ---
+[INFO] skip non existing resourceDirectory /Users/shaunt/RepoScout/reposcout-server/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ reposcout-server ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.1.1:run (default-cli) < test-compile @ reposcout-server <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.1.1:run (default-cli) @ reposcout-server ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-20T16:28:39.976-05:00  INFO 75455 --- [reposcout-server] [           main] c.r.server.ReposcoutServerApplication    : Starting ReposcoutServerApplication using Java 25.0.4.1 with PID 75455 (/Users/shaunt/RepoScout/reposcout-server/target/classes started by shaunt in /Users/shaunt/RepoScout/reposcout-server)
+2026-10-20T16:28:39.977-05:00  INFO 75455 --- [reposcout-server] [           main] c.r.server.ReposcoutServerApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-10-20T16:28:40.213-05:00  INFO 75455 --- [reposcout-server] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-10-20T16:28:40.218-05:00  INFO 75455 --- [reposcout-server] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-20T16:28:40.218-05:00  INFO 75455 --- [reposcout-server] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-20T16:28:40.235-05:00  INFO 75455 --- [reposcout-server] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 240 ms
+2026-10-20T16:28:40.357-05:00  INFO 75455 --- [reposcout-server] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-10-20T16:28:40.358-05:00  INFO 75455 --- [reposcout-server] [           main] c.r.server.ReposcoutServerApplication    : Started ReposcoutServerApplication in 0.497 seconds (process running for 0.616)
+2026-10-20T16:28:43.620-05:00  INFO 75455 --- [reposcout-server] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-20T16:28:43.621-05:00  INFO 75455 --- [reposcout-server] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-20T16:28:43.621-05:00  INFO 75455 --- [reposcout-server] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+[gemini] gemini-3.8-flash status=503 took 506 ms
+Model gemini-3.8-flash returned 503, trying next
+[gemini] gemini-3.6-flash timed out after 1s, trying next...
+[gemini] gemini-3.5-flash-lite status=200 took 728 ms

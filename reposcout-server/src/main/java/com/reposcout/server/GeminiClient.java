@@ -5,6 +5,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
+import java.time.Duration;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -12,10 +14,10 @@ import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
-
 @Service
 public class GeminiClient {
 
+   private static final Duration GEMINI_TIMEOUT = Duration.ofSeconds(40);
    @Value("${gemini.api-key}")
 private String apiKey;
 
@@ -32,15 +34,29 @@ HttpClient client = HttpClient.newHttpClient();
 HttpResponse<String> response = null;
 // try each model in order; move to the next only if this one is overloaded or rate limited
 for (String model : models) {
+        response = null;
 String url = "https://generativelanguage.googleapis.com/v1beta/models/"
 + model.trim() + ":generateContent";
-HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).header("Content-Type", "application/json").header("x-goog-api-key", apiKey).POST(HttpRequest.BodyPublishers.ofString(json))  // <- json goes here
+HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).header("Content-Type", "application/json").header("x-goog-api-key", apiKey).timeout(GEMINI_TIMEOUT).POST(HttpRequest.BodyPublishers.ofString(json))  // <- json goes here
 .build();
-response = client.send(request, HttpResponse.BodyHandlers.ofString());
+long start = System.nanoTime();
+    try {                                                              // new
+        response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    } catch (HttpTimeoutException e) {                                 // new
+        System.out.println("[gemini] " + model + " timed out after "
+                + GEMINI_TIMEOUT.toSeconds() + "s, trying next...");
+        continue;                                                      // new: move on to the next model
+    }
+    long ms = (System.nanoTime() - start) / 1_000_000;
+    System.out.println("[gemini] " + model + " status=" + response.statusCode() + " took " + ms + " ms");
+
 int status = response.statusCode();
 if (status != 503 && status != 429) break;   // success or a real error: stop
 System.out.println("Model " + model + " returned " + status + ", trying next");
         }
+if (response == null) {
+       throw new RuntimeException("All Gemini models timed out or failed");
+   }
 if (response.statusCode() != 200) {
 //catch any errors caused by a invalid request
 throw new RuntimeException("Gemini returned " + response.statusCode() + ": " + response.body());

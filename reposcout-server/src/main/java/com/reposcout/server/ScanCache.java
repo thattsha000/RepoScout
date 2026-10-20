@@ -14,6 +14,12 @@ public class ScanCache {
     private Node currPointer;
     private final int MAX_SIZE;
     
+    public ScanCache() 
+    {
+        this(200);
+    }
+
+    //helps for testing
     public ScanCache(int MAX_SIZE) 
     {
         lock = new ReentrantLock();

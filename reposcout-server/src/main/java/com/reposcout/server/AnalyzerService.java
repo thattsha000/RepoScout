@@ -3,9 +3,11 @@ package com.reposcout.server;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Ref;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,11 +16,19 @@ import org.springframework.web.server.ResponseStatusException;
 public class AnalyzerService {
     private final Harvester harvester;
     private final RankerService rankerService;
-    public AnalyzerService(Harvester harvester, RankerService rankerService) {
+    private final ScanCache cache;
+    public AnalyzerService(Harvester harvester, RankerService rankerService, ScanCache cache) {
         this.harvester = harvester;
         this.rankerService = rankerService;
+        this.cache = cache;
     }
     public List<Opportunity> findOpportunities(String repoUrl) throws Exception {
+        // new: check the cache before doing any work
+        String key = repoUrl + "@" + latestCommit(repoUrl);
+        List<Opportunity> cached = cache.get(key);
+        if (cached != null) {
+            return cached;
+        }
         File tempDir = Files.createTempDirectory("reposcout-").toFile();
         try {
             try (Git git = Git.cloneRepository()
@@ -34,14 +44,16 @@ public class AnalyzerService {
             }
             //harvest signals from the files 
             List<RawSignal> signals = harvester.harvest(tempDir);
+            List<Opportunity> result;
             try {
-                return rankerService.rank(signals, repoUrl);
-            } 
-            catch (Exception e) {
-                 e.printStackTrace();
+                result = rankerService.rank(signals, repoUrl);
+            } catch (Exception e) {
+                e.printStackTrace();
                 throw new ResponseStatusException(
-                 HttpStatus.BAD_GATEWAY, "Ranking failed for " + repoUrl, e);
-                }         
+                    HttpStatus.BAD_GATEWAY, "Ranking failed for " + repoUrl, e);
+            }
+            cache.put(key, result);   //add it to cache on a successful ranking 
+            return result;    
             }  
         finally {
             // delete the temp folder when done
@@ -58,5 +70,19 @@ public class AnalyzerService {
         }
     }
     dir.delete();
-}
+    }
+   private String latestCommit(String repoUrl) {
+    try {
+        Map<String, Ref> refs = Git.lsRemoteRepository()
+                .setRemote(repoUrl)
+                .callAsMap();
+        Ref head = refs.get("HEAD");
+        if (head == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Repo has no commits: " + repoUrl);
+        }
+        return head.getObjectId().name();   // the 40-character SHA
+    } catch (GitAPIException e) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Repo not found or not public: " + repoUrl);
+    }
+    }
 }

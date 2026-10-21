@@ -37,6 +37,7 @@ public class AnalyzerService {
             .setURI(repoUrl)
             .setDirectory(tempDir)
             .setDepth(1)
+            .setTimeout(30)
             .call())
             {//no work needs to be done here 
             } 
@@ -77,6 +78,7 @@ public class AnalyzerService {
     try {
         Map<String, Ref> refs = Git.lsRemoteRepository()
                 .setRemote(repoUrl)
+                .setTimeout(10)
                 .callAsMap();
         Ref head = refs.get("HEAD");
         if (head == null) {

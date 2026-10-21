@@ -1,0 +1,7 @@
+   **/node_modules
+   **/dist
+   **/target
+   **/server.log
+   **/.env
+   .git
+   reposcout-server/src/main/resources/static
